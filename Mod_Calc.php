@@ -99,7 +99,7 @@ class transLog{
             $this->netSum[$i] = $this->paySum[$i] - $this->dueSum[$i];
         }
     }
-    function getSumsByIndex(int $index, bool $net_only = false){
+    function getSumsByIndex(int $index, $net_only = false){
         if ($net_only){
             return $this->netSum[$index];
         }
@@ -108,7 +108,7 @@ class transLog{
                 $this->netSum[$index]);
         }
     }
-    function getSumsByName(string $name, bool $net_only = false){
+    function getSumsByName(string $name, $net_only = false){
         //PLEASE AVOID USING SAME NAMES!! (array_search may return the first one)
         $id = array_search($name, $this->head->nameList);
         if ($id >= 0 && $id < $this->head->people)
