@@ -66,11 +66,5 @@ class transLog{
 
 $h = new pHeader(array('a','b','c'));
 echo $h->findIndex('a');
-/*
-$bar = new foo('unknown',3);
-$bar->record(array(2,2,3),array(1,1,2));
-writePara($bar->getSum());
-var_dump($bar->consume);
-*/
 
 ?>
