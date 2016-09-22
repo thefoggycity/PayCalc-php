@@ -1,5 +1,10 @@
 <?php
 
+require "Mod_Lang.php";
+
+// SHOULD BE REPLACED BY A GLOBAL ONE
+$LANG = new langAssets("EN");
+
 class pHeader{
 	var $people;    //Number of people involved
 	var $nameList;  //People's namelist (in order)
@@ -116,6 +121,62 @@ class transLog{
     }
 }
 
+class calcRepay{
+    var $tl;        //Transaction log on which calc is performed
+    var $repayPref; //Matrix indicates the preference of repaying
+    var $repayAmt;  //Matrix of actual amount of repaying money
+    var $choiceLst; //Dictionary of the repay choices
+    var $netSums;   //Array of people's net bills
+
+    function __construct(transLog $transaction_log){
+        $this->tl = $transaction_log;
+        $this->repayAmt = NULL;
+        $this->netSums = $this->getNetSums();
+        $this->initPref();
+    }
+    function getNetSums(){
+        $this->netSums = array();
+        for($i = 0; $i < $this->tl->head->people; $i++){
+            $this->netSums[] = $this->tl->getSumsByIndex($i, true);
+        }
+    }
+    function initPref(){
+        $this->repayPref = array_fill(0, $this->tl->head->people, 
+            array_fill(0, $this->tl->head->people, -1));
+        for($i = 0; $i < $this->tl->head->people; $i++){
+            for($j = 0; $j < $this->tl->head->people; $j++){
+                if ($i == $j || $this->netSums[$i] * $this->netSums[$j] >= 0)
+                    continue;
+                else{
+                    $this->repayPref[$i][$j] = 0;
+                    if ($this->netSums[$i] > 0){    //i>0, j<0, j pay i money
+                        $this->choiceLst[$i * $this->tl->head->people + $j] = 
+                            $this->tl->head->nameList[$j].$LANG->crtLang['pay'].
+                            $this->tl->head->nameList[$i].$LANG->crtLang['money'];
+                    }
+                    else{                           //i<0, j>0, j pay i money
+                        $this->choiceLst[$i * $this->tl->head->people + $j] = 
+                            $this->tl->head->nameList[$i].$LANG->crtLang['pay'].
+                            $this->tl->head->nameList[$j].$LANG->crtLang['money'];
+                    }
+                }
+            }
+        }
+    }
+    function regPref(array $choice_feedback){
+        while($k = array_search(0, $choice_feedback))
+            unset($choice_feedback[$k]);
+        // MUST ADD PROTECTION IN UI TO PREVENT DUPLICATE CHOICES
+        // AND CHOICES MUST IN CONTINUOUS SEQUENCE
+        $choice_feedback = array_flip(array_unique($choice_feedback));
+        foreach($choice_feedback as $c){
+            $j = $c % $this->tl->head->people;
+            $i = (int)(($c - $j) / $this->tl->head->people);
+            $this->repayPref[$i][$j] = array_search($c, $choice_feedback);
+        }
+    }
+}
+
 //Test code
 
 $h = new pHeader(array('a', 'b', 'c'));
@@ -141,4 +202,8 @@ var_dump($l->getSumsByIndex(1));
 var_dump($l->getSumsByIndex(2, false));
 var_dump($l->getSumsByName('a'));
 
+$a = array(12=>0,35=>0,44=>1);
+var_dump($a);
+var_dump(array_search(2,$a));
+var_dump(array_unique($a));
 ?>
